@@ -23,11 +23,10 @@ import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.*;
 	@see com.martijndashorst.runcc.patterns.interpreter.parsergenerator.lexer.LexerBuilder
 	@author (c) 2002, Fritz Ritzberger
 */
-
 public class SyntaxSeparation
 {
-	private List tokenSymbols;
-	private List ignoredSymbols;
+	private List<String> tokenSymbols;
+	private List<String> ignoredSymbols;
 	private Syntax parserSyntax;
 	private Syntax lexerSyntax;
 	public static boolean DEBUG = true;
@@ -53,7 +52,7 @@ public class SyntaxSeparation
 		Returns the top level token symbols for the lexer. These symbols ARE enclosed within `backquotes`.
 		This can be used at <i>setTerminals</i> call for a standalone Lexer.
 	*/
-	public List getTokenSymbols()	{
+	public List<String> getTokenSymbols()	{
 		return tokenSymbols;
 	}
 
@@ -61,7 +60,7 @@ public class SyntaxSeparation
 		Returns the top level ignored token symbols for the lexer. These symbols are NOT enclosed within `backquotes`.
 		This will be used by the LexerBuilder for feeding the LexerImpl with ignored symbols.
 	*/
-	public List getIgnoredSymbols()	{
+	public List<String> getIgnoredSymbols()	{
 		return ignoredSymbols;
 	}
 
@@ -69,9 +68,9 @@ public class SyntaxSeparation
 	private void separate(Syntax syntax, IntArray deleteIndexes)
 		throws SyntaxException
 	{
-		Hashtable tokenSymbols = new Hashtable();
-		Hashtable ignoredSymbols = new Hashtable();
-		List commandsDefinedAsTOKEN = new ArrayList();
+		Hashtable<String, String> tokenSymbols = new Hashtable<String, String>();
+		Hashtable<String, String> ignoredSymbols = new Hashtable<String, String>();
+		List<String> commandsDefinedAsTOKEN = new ArrayList<String>();
 
 		// take away all rules defined by "token" and "ignored"
 		for (int i = 0; i < syntax.size(); i++)	{
@@ -103,19 +102,19 @@ public class SyntaxSeparation
 		deleteIndexes.removeIndexesFrom(syntax);
 
 		// check if tokens are defined as ignored or vice versa
-		for (Iterator it = tokenSymbols.keySet().iterator(); it.hasNext(); )	{
+		for (Iterator<String> it = tokenSymbols.keySet().iterator(); it.hasNext(); )	{
 			Object o = it.next();
 			if (ignoredSymbols.get(o) != null)
 				throw new SyntaxException("Can not define token as ignored: "+o);
 		}
-		for (Iterator it = ignoredSymbols.keySet().iterator(); it.hasNext(); )	{
+		for (Iterator<String> it = ignoredSymbols.keySet().iterator(); it.hasNext(); )	{
 			Object o = it.next();
 			if (tokenSymbols.get(o) != null)
 				throw new SyntaxException("Can not define ignored as token: "+o);
 		}
 		
 		boolean tokensWereDeclared = tokenSymbols.size() > 0;
-		List commandTokens = new ArrayList();
+		List<String> commandTokens = new ArrayList<String>();
 		
 		// collect all `lexertokens`.
 		for (int i = 0; i < syntax.size(); i++)	{
@@ -164,8 +163,8 @@ public class SyntaxSeparation
 		}
 		
 		// add ignoredSymbols to member variable lists
-		this.ignoredSymbols = new ArrayList(ignoredSymbols.size());
-		for (Enumeration e = ignoredSymbols.keys(); e.hasMoreElements(); )
+		this.ignoredSymbols = new ArrayList<String>(ignoredSymbols.size());
+		for (Enumeration<String> e = ignoredSymbols.keys(); e.hasMoreElements(); )
 			this.ignoredSymbols.add(e.nextElement());
 
 		this.parserSyntax = provideParserSyntax(syntax, lexerSyntax, tokensWereDeclared, tokenSymbols, commandTokens, commandsDefinedAsTOKEN);
@@ -177,7 +176,7 @@ public class SyntaxSeparation
 	}
 
 
-	private Syntax provideParserSyntax(Syntax parserSyntax, Syntax lexerSyntax, boolean tokensWereDeclared, Map tokenSymbols, List commandTokens, List commandsDefinedAsTOKEN)
+	private Syntax provideParserSyntax(Syntax parserSyntax, Syntax lexerSyntax, boolean tokensWereDeclared, Map<String, String> tokenSymbols, List<String> commandTokens, List<String> commandsDefinedAsTOKEN)
 		throws SyntaxException
 	{
 		boolean lexerOnlyHandling = false;
@@ -185,7 +184,7 @@ public class SyntaxSeparation
 		// when this was a mixed grammar: mark all tokens and ignored symbols as lexer `terminals` in parserSyntax
 		if (parserSyntax.size() > 0)	{
 			if (DEBUG) System.err.println("INFO: Mixed parser and lexer specification, "+lexerSyntax.size()+" lexer rules, "+parserSyntax.size()+" parser rules.");
-			this.tokenSymbols = new ArrayList(tokenSymbols.size());	// keep only toplevel token symbols
+			this.tokenSymbols = new ArrayList<String>(tokenSymbols.size());	// keep only toplevel token symbols
 
 			for (int i = 0; i < parserSyntax.size(); i++)	{
 				Rule rule = parserSyntax.getRule(i);
@@ -231,7 +230,7 @@ public class SyntaxSeparation
 			List startRules = lexerSyntax.findStartRules();
 			
 			if (startRules.size() > 0)	{
-				this.tokenSymbols = new ArrayList(startRules.size());	// allocate new list only if there were start rules
+				this.tokenSymbols = new ArrayList<String>(startRules.size());	// allocate new list only if there were start rules
 				
 				for (int i = 0; i < startRules.size(); i++)	{
 					String symbol = Token.COMMAND_QUOTE + ((Rule) startRules.get(i)).getNonterminal() + Token.COMMAND_QUOTE;
@@ -250,14 +249,14 @@ public class SyntaxSeparation
 		
 		if (lexerOnlyHandling)	{	// no parser syntax remained, and tokens were defined or no start rules were found
 			for (int i = 0; i < commandTokens.size(); i++)	{	// no parser syntax, remove collected `lexercommands` when they were not defined in TOKEN definition
-				String sym = (String) commandTokens.get(i);
+				String sym = commandTokens.get(i);
 				if (commandsDefinedAsTOKEN.indexOf(sym) < 0)
 					tokenSymbols.remove(sym);
 			}
 
 			// add tokenSymbols to member variable lists
-			this.tokenSymbols = new ArrayList(tokenSymbols.size());
-			for (Iterator it = tokenSymbols.keySet().iterator(); it.hasNext(); )
+			this.tokenSymbols = new ArrayList<String>(tokenSymbols.size());
+			for (Iterator<String> it = tokenSymbols.keySet().iterator(); it.hasNext(); )
 				this.tokenSymbols.add(Token.COMMAND_QUOTE + it.next().toString() + Token.COMMAND_QUOTE);
 				// must enclose all explicit token symbols in `backquotes`
 		}
