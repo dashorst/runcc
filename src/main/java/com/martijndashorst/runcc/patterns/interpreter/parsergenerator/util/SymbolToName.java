@@ -3,80 +3,100 @@ package com.martijndashorst.runcc.patterns.interpreter.parsergenerator.util;
 import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.Token;
 
 /**
-	The contained methods are needed to generate nonterminal names for spawned rules,
-	e.g. for a repeatable nullable rule "(a | b | c)" from the rule "e ::= (a | b | c)* d;".
+ * The contained methods are needed to generate nonterminal names for spawned
+ * rules, e.g. for a repeatable nullable rule "(a | b | c)" from the rule
+ * "e ::= (a | b | c)* d;".
+ * 
+ * @author (c) 2000, Fritz Ritzberger
+ */
 
-	@author (c) 2000, Fritz Ritzberger
-*/
-
-public abstract class SymbolToName
-{
+public abstract class SymbolToName {
 	/**
-		Converts the passed character sequence (symbol) to a name that can be used as identifier (but not as Java identifier).
-		If enclosing quotes are found, they will be substituted by "_".
-		@param symbol character sequence to be converted to identifier
-	*/
-	public static String makeIdentifier(String symbol)	{
+	 * Converts the passed character sequence (symbol) to a name that can be
+	 * used as identifier (but not as Java identifier). If enclosing quotes are
+	 * found, they will be substituted by "_".
+	 * 
+	 * @param symbol
+	 *            character sequence to be converted to identifier
+	 */
+	public static String makeIdentifier(String symbol) {
 		return makeIdentifier(symbol, false);
 	}
-	
+
 	/**
-		Converts the passed character sequence (symbol) to a name that can be used as identifier, optionally as Java identifier.
-		If enclosing quotes are found, they will be substituted by "_".
-		@param symbol character sequence to be converted to identifier
-		@param startIsSignificant when true a Java identifier is produced
-	*/
-	public static String makeIdentifier(String symbol, boolean startIsSignificant)	{
+	 * Converts the passed character sequence (symbol) to a name that can be
+	 * used as identifier, optionally as Java identifier. If enclosing quotes
+	 * are found, they will be substituted by "_".
+	 * 
+	 * @param symbol
+	 *            character sequence to be converted to identifier
+	 * @param startIsSignificant
+	 *            when true a Java identifier is produced
+	 */
+	public static String makeIdentifier(String symbol,
+			boolean startIsSignificant) {
 		return makeIdentifier(symbol, "_", startIsSignificant);
 	}
-	
+
 	/**
-		Converts the passed character sequence (symbol) to a name that can be used as identifier (but not as Java identifier).
-		If enclosing quotes are found, they will be substituted by passed substitute string.
-		@param symbol character sequence to be converted to identifier
-		@param enclosingQuoteSubstitute the string to be used for enclosing quotes
-	*/
-	public static String makeIdentifier(String symbol, String enclosingQuoteSubstitute)	{
+	 * Converts the passed character sequence (symbol) to a name that can be
+	 * used as identifier (but not as Java identifier). If enclosing quotes are
+	 * found, they will be substituted by passed substitute string.
+	 * 
+	 * @param symbol
+	 *            character sequence to be converted to identifier
+	 * @param enclosingQuoteSubstitute
+	 *            the string to be used for enclosing quotes
+	 */
+	public static String makeIdentifier(String symbol,
+			String enclosingQuoteSubstitute) {
 		return makeIdentifier(symbol, enclosingQuoteSubstitute, false);
 	}
-	
+
 	/**
-		Converts the passed character sequence (symbol) to a name that can be used as identifier, optionally as Java identifier.
-		If enclosing quotes are found, they will be substituted by passed substitute string.
-		@param symbol character sequence to be converted to identifier
-		@param enclosingQuoteSubstitute the string to be used for enclosing quotes
-		@param startIsSignificant when true a Java identifier is produced
-	*/
-	public static String makeIdentifier(String symbol, String enclosingQuoteSubstitute, boolean startIsSignificant)	{
+	 * Converts the passed character sequence (symbol) to a name that can be
+	 * used as identifier, optionally as Java identifier. If enclosing quotes
+	 * are found, they will be substituted by passed substitute string.
+	 * 
+	 * @param symbol
+	 *            character sequence to be converted to identifier
+	 * @param enclosingQuoteSubstitute
+	 *            the string to be used for enclosing quotes
+	 * @param startIsSignificant
+	 *            when true a Java identifier is produced
+	 */
+	public static String makeIdentifier(String symbol,
+			String enclosingQuoteSubstitute, boolean startIsSignificant) {
 		if (symbol.equals(Token.UPTO))
 			return "upto";
-			
+
 		StringBuffer sb = new StringBuffer();
 		int len = symbol.length();
-		
-		for (int i = 0; i < len; i++)	{
+
+		for (int i = 0; i < len; i++) {
 			char c = symbol.charAt(i);
 
-			if (c == '_' && (len == 1 || len == 3 && i == 1 && sb.length() > 0 && sb.charAt(0) == '_') ||
-					startIsSignificant && i == 0 && (c == '$' || !Character.isJavaIdentifierStart(c)) ||
-					(c == '$' || !Character.isJavaIdentifierPart(c)))
-			{
-				if ((i == 0 || i == len - 1) && (c == '\'' || c == '"' || c == '`'))
+			if (c == '_'
+					&& (len == 1 || len == 3 && i == 1 && sb.length() > 0
+							&& sb.charAt(0) == '_') || startIsSignificant
+					&& i == 0
+					&& (c == '$' || !Character.isJavaIdentifierStart(c))
+					|| (c == '$' || !Character.isJavaIdentifierPart(c))) {
+				if ((i == 0 || i == len - 1)
+						&& (c == '\'' || c == '"' || c == '`'))
 					sb.append(enclosingQuoteSubstitute);
 				else
 					sb.append(convert(c));
-			}
-			else	{
+			} else {
 				sb.append(c);
 			}
 		}
-		
+
 		return sb.toString();
 	}
-	
 
 	/** Returns a symbolic name for passed symbol, e.g. "lparen" for "(". */
-	public static String convert(char c)	{
+	public static String convert(char c) {
 		if (c == ':')
 			return "colon";
 		if (c == ';')
@@ -144,12 +164,10 @@ public abstract class SymbolToName
 		if (c == '`')
 			return "bquote";
 		if (c >= '0' && c <= '9')
-			return ""+c;
-		return "_";	// default
+			return "" + c;
+		return "_"; // default
 	}
-	
-	
-	private SymbolToName()	{}	// do not instantiate
+
+	private SymbolToName() {
+	} // do not instantiate
 }
-	
-	

@@ -1,26 +1,27 @@
 package com.martijndashorst.runcc.patterns.interpreter.parsergenerator.examples;
 
-import java.io.*;
+import java.io.FileReader;
+import java.io.InputStreamReader;
 
 import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.builder.SerializedLexer;
-import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.lexer.*;
-import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.*;
-import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.builder.*;
+import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.lexer.LexerImpl;
+import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.Syntax;
+import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.builder.SyntaxBuilder;
+import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.builder.SyntaxSeparation;
 import com.martijndashorst.runcc.util.TimeStopper;
 
 /**
-	Example DTD parser. Shows how to import unresolved nonterminals from another syntax (XML).
-	
-	@author Fritz Ritzberger, 2003
-*/
+ * Example DTD parser. Shows how to import unresolved nonterminals from another
+ * syntax (XML).
+ * 
+ * @author Fritz Ritzberger, 2003
+ */
 
-public class DtdLexer
-{
-	public static void main(String [] args)
-		throws Exception
-	{
-		if (args.length <= 0)	{
-			System.err.println("SYNTAX: java "+DtdLexer.class.getName()+" file.dtd [file.dtd ...]");
+public class DtdLexer {
+	public static void main(String[] args) throws Exception {
+		if (args.length <= 0) {
+			System.err.println("SYNTAX: java " + DtdLexer.class.getName()
+					+ " file.dtd [file.dtd ...]");
 			System.err.println("	Example DTD Parser");
 			System.exit(1);
 		}
@@ -29,39 +30,52 @@ public class DtdLexer
 
 		SerializedLexer builder = new SerializedLexer();
 		LexerImpl lexer;
-		
-		if ((lexer = (LexerImpl) builder.readLexer(null, "Dtd")) == null)	{	// try to get serialized lexer
+
+		if ((lexer = (LexerImpl) builder.readLexer(null, "Dtd")) == null) { // try
+																			// to
+																			// get
+																			// serialized
+																			// lexer
 			// read the DTD syntax (fragment) from EBNF file
-			Syntax dtdSyntax = new SyntaxBuilder(new InputStreamReader(DtdLexer.class.getResourceAsStream("Dtd.syntax"))).getSyntax();
+			Syntax dtdSyntax = new SyntaxBuilder(new InputStreamReader(
+					DtdLexer.class.getResourceAsStream("Dtd.syntax")))
+					.getSyntax();
 			// read the XML syntax from EBNF file
-			Syntax xmlSyntax = new SyntaxBuilder(new InputStreamReader(DtdLexer.class.getResourceAsStream("Xml.syntax"))).getSyntax();
-			
-			// resolve DTD syntax from XML syntax (which contains most of DTD rules for processing embedded DTDs)
+			Syntax xmlSyntax = new SyntaxBuilder(new InputStreamReader(
+					DtdLexer.class.getResourceAsStream("Xml.syntax")))
+					.getSyntax();
+
+			// resolve DTD syntax from XML syntax (which contains most of DTD
+			// rules for processing embedded DTDs)
 			dtdSyntax.resolveFrom(xmlSyntax);
-			//System.err.println("DTD Syntax is:\n"+dtdSyntax);
-			
+			// System.err.println("DTD Syntax is:\n"+dtdSyntax);
+
 			// put the lexer to file cache for next call
 			SyntaxSeparation separation = new SyntaxSeparation(dtdSyntax);
-			lexer = (LexerImpl) builder.buildAndStoreLexer(	// store the lexer for next call
-					separation.getLexerSyntax(),
-					"Dtd",
+			lexer = (LexerImpl) builder.buildAndStoreLexer(
+					// store the lexer for next call
+					separation.getLexerSyntax(), "Dtd",
 					separation.getTokenSymbols(),
 					separation.getIgnoredSymbols());
 		}
 
-		System.err.println("time to build DTD file parser was "+timer.getInterval());
+		System.err.println("time to build DTD file parser was "
+				+ timer.getInterval());
 
-		for (int i = 0; i < args.length; i++)	{
+		for (int i = 0; i < args.length; i++) {
 			String parseFile = args[i];
 			FileReader parseInput = new FileReader(parseFile);
 			lexer.setInput(parseInput);
-			
-			System.err.println("======================== Parsing: "+parseFile+" ========================");
+
+			System.err.println("======================== Parsing: " + parseFile
+					+ " ========================");
 			boolean ok = lexer.lex(new XmlLexer.PrintXmlLexerSemantic());
-			System.err.println("========================================================");
-			
-			System.err.println("Lexing took "+timer.getInterval()+" millis.");
-			System.err.println("Result was: "+ok);
+			System.err
+					.println("========================================================");
+
+			System.err.println("Lexing took " + timer.getInterval()
+					+ " millis.");
+			System.err.println("Result was: " + ok);
 		}
 	}
 

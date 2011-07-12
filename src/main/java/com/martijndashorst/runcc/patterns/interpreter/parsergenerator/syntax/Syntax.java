@@ -1,151 +1,171 @@
 package com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.Token;
 
 /**
-	A Syntax is a Rule list that can be converted to a parser table.
-	It provides several methods to check and simplify the grammar.
-	Syntax accepts no duplicate rules (ignores any addition except
-	the first by using a backing hashtable).
-	
-	@author (c) 2004 Fritz Ritzberger
-*/
+ * A Syntax is a Rule list that can be converted to a parser table. It provides
+ * several methods to check and simplify the grammar. Syntax accepts no
+ * duplicate rules (ignores any addition except the first by using a backing
+ * hashtable).
+ * 
+ * @author (c) 2004 Fritz Ritzberger
+ */
 
-public class Syntax implements Serializable
-{
+public class Syntax implements Serializable {
 	private List rules;
 	private Hashtable ruleHash;
-	
-	public Syntax()	{
+
+	public Syntax() {
 		this(new ArrayList());
 	}
-	
-	public Syntax(int size)	{
+
+	public Syntax(int size) {
 		this(new ArrayList(size));
 	}
-	
-	public Syntax(String [][] rules)	{
+
+	public Syntax(String[][] rules) {
 		this(SyntaxUtil.ruleArrayToList(rules));
 	}
-	
-	public Syntax(String [][][] ruleSets)	{
+
+	public Syntax(String[][][] ruleSets) {
 		this(SyntaxUtil.catenizeRulesUnique(ruleSets));
 	}
 
-	public Syntax(List rules)	{
+	public Syntax(List rules) {
 		appendRules(rules);
 	}
 
-
-	/** Append rules to this syntax. List elements can be Rule or List, second will be converted to Rule. */
-	public void appendRules(List rules)	{
-		if (rules != null)	{
-			if (rules.size() > 0)	{
-				if (this.rules == null)	{
+	/**
+	 * Append rules to this syntax. List elements can be Rule or List, second
+	 * will be converted to Rule.
+	 */
+	public void appendRules(List rules) {
+		if (rules != null) {
+			if (rules.size() > 0) {
+				if (this.rules == null) {
 					allocateRules(rules);
 				}
-					
-				for (int i = 0; i < rules.size(); i++)	{
+
+				for (int i = 0; i < rules.size(); i++) {
 					Object o = rules.get(i);
 					if (o instanceof Rule)
 						addRule((Rule) o);
-					else	// must convert from List to Rule
+					else
+						// must convert from List to Rule
 						addRule(new Rule((List) o));
 				}
-			}
-			else	{
-				if (this.rules == null)	{
+			} else {
+				if (this.rules == null) {
 					allocateRules(rules);
 				}
 			}
 		}
 	}
-	
+
 	/** Returns the number of rules of this Syntax. */
-	public int size()	{
+	public int size() {
 		return rules != null ? rules.size() : 0;
 	}
-	
+
 	/** Returns the rule at the given position. */
-	public Rule getRule(int i)	{
+	public Rule getRule(int i) {
 		return (Rule) rules.get(i);
 	}
-	
+
 	/** Appends a new rule to this Syntax. */
-	public void addRule(Rule rule)	{
+	public void addRule(Rule rule) {
 		insertRule(size(), rule);
 	}
-	
-	/** Inserts a new rule into this Syntax (needed to set artificial START rule at position 0). */
-	public void insertRule(int i, Rule rule)	{
-		if (rules == null)	{
+
+	/**
+	 * Inserts a new rule into this Syntax (needed to set artificial START rule
+	 * at position 0).
+	 */
+	public void insertRule(int i, Rule rule) {
+		if (rules == null) {
 			allocateRules(null);
 		}
-		
+
 		if (ruleHash.get(rule) != null)
-			return;	// already contained
-		
+			return; // already contained
+
 		ruleHash.put(rule, rule);
 		rules.add(i, rule);
 	}
-	
+
 	/** Removes the rule at passed index from this Syntax. */
-	public void removeRule(int index)	{
+	public void removeRule(int index) {
 		rules.remove(index);
 	}
-	
 
-	private void allocateRules(List rules)	{
+	private void allocateRules(List rules) {
 		int size = rules == null || rules.size() <= 0 ? 64 : rules.size();
 		this.rules = new ArrayList(size);
 		this.ruleHash = new Hashtable(size);
 	}
 
-
-	/** Returns a List of top level Rules (that do not appear on right side of any contained rule). */
-	public List findStartRules()	{
+	/**
+	 * Returns a List of top level Rules (that do not appear on right side of
+	 * any contained rule).
+	 */
+	public List findStartRules() {
 		List roots = new ArrayList(1);
-		
-		for (int i = 0; i < size(); i++)	{
+
+		for (int i = 0; i < size(); i++) {
 			Rule rule = getRule(i);
 			String nonterm = rule.getNonterminal();
 
 			// search this left side nonterminal on right sides of all rules
-			boolean found = nonterm.equals(Token.TOKEN) || nonterm.equals(Token.IGNORED);
-			for (int j = 0; found == false && j < size(); j++)	{
+			boolean found = nonterm.equals(Token.TOKEN)
+					|| nonterm.equals(Token.IGNORED);
+			for (int j = 0; found == false && j < size(); j++) {
 				Rule r = getRule(j);
-				if (j != i && r.getNonterminal().equals(nonterm) == false)	// start rule is allowed to be recursive
+				if (j != i && r.getNonterminal().equals(nonterm) == false) // start
+																			// rule
+																			// is
+																			// allowed
+																			// to
+																			// be
+																			// recursive
 					for (int k = 0; found == false && k < r.rightSize(); k++)
 						if (r.getRightSymbol(k).equals(nonterm))
 							found = true;
 			}
-			
-			if (found == false)	// must be a top level rule
+
+			if (found == false) // must be a top level rule
 				roots.add(rule);
 		}
-		
+
 		return roots;
 	}
 
-
 	/**
-		Simplify the syntax. Search rules that have a nonterminal that is defined only once
-		and contains exactly one symbol on right side. Such a rule gets deleted and its references
-		get substituted by the symbol on right side of that rule.
-		<p>
-		This method is called by default from SerializedObject (base class for all builders).
-		<p>
-		CAUTION: Such symbols will not be called within Semantic!
-	*/
-	public void resolveSingulars()	{
+	 * Simplify the syntax. Search rules that have a nonterminal that is defined
+	 * only once and contains exactly one symbol on right side. Such a rule gets
+	 * deleted and its references get substituted by the symbol on right side of
+	 * that rule.
+	 * <p>
+	 * This method is called by default from SerializedObject (base class for
+	 * all builders).
+	 * <p>
+	 * CAUTION: Such symbols will not be called within Semantic!
+	 */
+	public void resolveSingulars() {
 		Rule singular;
-		while ((singular = removeSingular()) != null)	{
+		while ((singular = removeSingular()) != null) {
 			String substitute = singular.getNonterminal();
 
-			for (int i = 0; i < size(); i++)	{	// substitute rules containing the singular
+			for (int i = 0; i < size(); i++) { // substitute rules containing
+												// the singular
 				Rule rule = getRule(i);
 
 				for (int j = 0; j < rule.rightSize(); j++)
@@ -155,32 +175,43 @@ public class Syntax implements Serializable
 		}
 	}
 
-	private Rule removeSingular()	{
-		for (int i = size() - 1; i >= 0; i--)	{
+	private Rule removeSingular() {
+		for (int i = size() - 1; i >= 0; i--) {
 			Rule rule = getRule(i);
 			String nonterminal = rule.getNonterminal();
-			
-			// check if rule has only one symbol on right side and nonterminal is artificial symbol
-			boolean singular = 
-				rule.rightSize() == 1 &&
-				nonterminal.startsWith(Token.ARTIFICIAL_NONTERMINAL_START_CHARACTER) &&
-				nonterminal.equals(Token.TOKEN) == false && nonterminal.equals(Token.IGNORED) == false;
+
+			// check if rule has only one symbol on right side and nonterminal
+			// is artificial symbol
+			boolean singular = rule.rightSize() == 1
+					&& nonterminal
+							.startsWith(Token.ARTIFICIAL_NONTERMINAL_START_CHARACTER)
+					&& nonterminal.equals(Token.TOKEN) == false
+					&& nonterminal.equals(Token.IGNORED) == false;
 
 			// check if defined only once on any left side
 			for (int j = 0; singular && j < size(); j++)
 				if (j != i && getRule(j).getNonterminal().equals(nonterminal))
-					singular = false;	// nonterm has been found once more on left side: rule has alternative rules
-			
-			// check if this is not a semantic splitting of a nonterminal in different contexts:
-			// is right symbol defined only once on any right side with rightSize() == 1 ?
+					singular = false; // nonterm has been found once more on
+										// left side: rule has alternative rules
+
+			// check if this is not a semantic splitting of a nonterminal in
+			// different contexts:
+			// is right symbol defined only once on any right side with
+			// rightSize() == 1 ?
 			String rightSymbol = singular ? rule.getRightSymbol(0) : null;
 			for (int j = 0; singular && j < size(); j++)
-				if (j != i && getRule(j).rightSize() == 1 && getRule(j).getRightSymbol(0).equals(rightSymbol))
-					singular = false;	// nonterm has been found once more on a right side with exactly one symbol
-			
-			if (singular)	{
-				if (rule.indexOnRightSide(nonterminal) >= 0)	// check if recursive rule
-					System.err.println("WARNING: removing recursive singular rule: "+rule);
+				if (j != i && getRule(j).rightSize() == 1
+						&& getRule(j).getRightSymbol(0).equals(rightSymbol))
+					singular = false; // nonterm has been found once more on a
+										// right side with exactly one symbol
+
+			if (singular) {
+				if (rule.indexOnRightSide(nonterminal) >= 0) // check if
+																// recursive
+																// rule
+					System.err
+							.println("WARNING: removing recursive singular rule: "
+									+ rule);
 
 				this.rules.remove(i);
 				return rule;
@@ -189,48 +220,55 @@ public class Syntax implements Serializable
 		return null;
 	}
 
-
-
 	/**
-		Resolves undefined rules in this syntax from another syntax.
-		@param resolvingSyntax the syntax to copy rules from
-	*/
-	public void resolveFrom(Syntax resolvingSyntax)	{
+	 * Resolves undefined rules in this syntax from another syntax.
+	 * 
+	 * @param resolvingSyntax
+	 *            the syntax to copy rules from
+	 */
+	public void resolveFrom(Syntax resolvingSyntax) {
 		Set unresolved = getUnresolvedNonterminals();
 		Map done = new Hashtable();
-		for (Iterator it = unresolved.iterator(); it.hasNext(); )	{
+		for (Iterator it = unresolved.iterator(); it.hasNext();) {
 			getRulesUnderSymbol((String) it.next(), resolvingSyntax, done);
 		}
 	}
 
 	/**
-		Returns a set of nonterminals that have no rule within this syntax.
-	*/
-	public Set getUnresolvedNonterminals()	{
+	 * Returns a set of nonterminals that have no rule within this syntax.
+	 */
+	public Set getUnresolvedNonterminals() {
 		Set unresolved = new HashSet();
-		for (int j = 0; j < size(); j++)	{
+		for (int j = 0; j < size(); j++) {
 			Rule rule = getRule(j);
-			for (int i = 0; i < rule.rightSize(); i++)	{
+			for (int i = 0; i < rule.rightSize(); i++) {
 				String sym = rule.getRightSymbol(i);
-				if (Token.isTerminal(sym) == false && sym.equals(Token.BUTNOT) == false && sym.equals(Token.UPTO) == false && hasRule(sym) == false)
+				if (Token.isTerminal(sym) == false
+						&& sym.equals(Token.BUTNOT) == false
+						&& sym.equals(Token.UPTO) == false
+						&& hasRule(sym) == false)
 					unresolved.add(sym);
 			}
 		}
 		return unresolved;
 	}
 
-	private void getRulesUnderSymbol(String nonterminal, Syntax sourceSyntax, Map done)	{
+	private void getRulesUnderSymbol(String nonterminal, Syntax sourceSyntax,
+			Map done) {
 		if (done.get(nonterminal) != null)
 			return;
 		done.put(nonterminal, nonterminal);
 
-		for (int i = 0; i < sourceSyntax.size(); i++)	{
+		for (int i = 0; i < sourceSyntax.size(); i++) {
 			Rule rule = sourceSyntax.getRule(i);
-			if (rule.getNonterminal().equals(nonterminal))	{
+			if (rule.getNonterminal().equals(nonterminal)) {
 				addRule(rule);
-				for (int j = 0; j < rule.rightSize(); j++)	{	// cascade to other rules
+				for (int j = 0; j < rule.rightSize(); j++) { // cascade to other
+																// rules
 					String sym = rule.getRightSymbol(j);
-					if (Token.isTerminal(sym) == false && sym.equals(Token.BUTNOT) == false && sym.equals(Token.UPTO) == false)
+					if (Token.isTerminal(sym) == false
+							&& sym.equals(Token.BUTNOT) == false
+							&& sym.equals(Token.UPTO) == false)
 						getRulesUnderSymbol(sym, sourceSyntax, done);
 				}
 			}
@@ -238,22 +276,21 @@ public class Syntax implements Serializable
 	}
 
 	/**
-		Returns true if the passed nonterminal is on the left side of at least one contained rule.
-	*/
-	public boolean hasRule(String nonterminal)	{
+	 * Returns true if the passed nonterminal is on the left side of at least
+	 * one contained rule.
+	 */
+	public boolean hasRule(String nonterminal) {
 		for (int i = 0; i < size(); i++)
 			if (getRule(i).getNonterminal().equals(nonterminal))
 				return true;
 		return false;
-	}		
-
-
-
+	}
 
 	/** Returns the syntax as a human readable multiline text. */
-	public String toString()	{
+	@Override
+	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < size(); i++)	{
+		for (int i = 0; i < size(); i++) {
 			sb.append(getRule(i).toString());
 			sb.append("\n");
 		}

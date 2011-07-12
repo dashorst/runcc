@@ -16,54 +16,59 @@ import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.Syn
 import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.SyntaxException;
 
 /**
- * This sample shows how to set another Lexer implementation
- * into the Parser-builder.
+ * This sample shows how to set another Lexer implementation into the
+ * Parser-builder.
  * 
  * @author Fritz Ritzberger
  */
 public class HowToOverrideLexerImpl {
-	public static void main(String args[])
-		throws Exception
-	{
+	public static void main(String args[]) throws Exception {
 		// a Lexer derivate class that prints a message
-		class OverrideLexer extends LexerImpl
-		{
-			public OverrideLexer(List ignoredSymbols, Map charConsumers)	{
+		class OverrideLexer extends LexerImpl {
+			public OverrideLexer(List ignoredSymbols, Map charConsumers) {
 				super(ignoredSymbols, charConsumers);
 			}
+
 			/** Could provide another lexing Strategy. */
-			public Strategy newStrategy()	{
+			@Override
+			public Strategy newStrategy() {
 				return super.newStrategy();
 			}
-		};
+		}
+		;
 
 		// override the Parser builder to install the new Lexer implementation
-		SerializedParser builder = new SerializedParser()	{
-			protected SerializedLexer newSerializedLexer()	// override SerializedLexer factory method
-				throws Exception
-			{
-				return new SerializedLexer()	{
-					protected LexerBuilder newLexerBuilder(Syntax syntax, List ignoredSymbols)	// override LexerBuilder factory method
-						throws LexerException, SyntaxException
-					{
-						return new LexerBuilder(syntax, ignoredSymbols)	{
-							public Lexer getLexer()	{	// override Lexer factory method
-								return new OverrideLexer(ignoredSymbols, charConsumers);
+		SerializedParser builder = new SerializedParser() {
+			@Override
+			protected SerializedLexer newSerializedLexer() // override
+															// SerializedLexer
+															// factory method
+					throws Exception {
+				return new SerializedLexer() {
+					@Override
+					protected LexerBuilder newLexerBuilder(Syntax syntax,
+							List ignoredSymbols) // override LexerBuilder
+													// factory method
+							throws LexerException, SyntaxException {
+						return new LexerBuilder(syntax, ignoredSymbols) {
+							@Override
+							public Lexer getLexer() { // override Lexer factory
+														// method
+								return new OverrideLexer(ignoredSymbols,
+										charConsumers);
 							}
 						};
 					}
 				};
 			}
 		};
-		
-		String [][] syntaxInput = {
-			{ "Start", "\"Hello\"", "\"World\"" },
-			{ Token.IGNORED, "`whitespaces`" },
-		};
-		
+
+		String[][] syntaxInput = { { "Start", "\"Hello\"", "\"World\"" },
+				{ Token.IGNORED, "`whitespaces`" }, };
+
 		Parser parser = builder.get(syntaxInput);
 		boolean ok = parser.parse("Hello World");
-		System.err.println("Parsing was "+ok);
+		System.err.println("Parsing was " + ok);
 	}
 
 }
