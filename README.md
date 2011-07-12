@@ -44,29 +44,46 @@ Author: Ritzberger Fritz, June 2004
 Quick Start
 -----------
 
-A parser generator creates a parser from syntax rules. Rules are used to describe the inner structure of a text to analyze. When analyzed by the generated parser, the parts of the text can be processed by a semantic implementation. In short: a parser generator is a tool to create analyzers.
+A parser generator creates a parser from syntax rules. Rules are used to
+describe the inner structure of a text to analyze. When analyzed by the
+generated parser, the parts of the text can be processed by a semantic
+implementation. In short: a parser generator is a tool to create analyzers.
 
-RunCC is written in Java. No additional libraries (except JRE) are required. It needs Java 2 collections (does not run on JDK 1.1 or older).
-RunCC provides a bottom-up (LR) parser that can be SLR, LR or LALR. It provides a lexer that actually is a top-down (LL) parser and can read character (UNICODE) as well as byte input.
+RunCC is written in Java. No additional libraries (except JRE) are required.
+It needs Java 2 collections (does not run on JDK 1.1 or older).
 
-RunCC features simplicity and the absence of any cryptography except an EBNF dialect.
+RunCC provides a bottom-up (LR) parser that can be SLR, LR or LALR. It
+provides a lexer that actually is a top-down (LL) parser and can read
+character (UNICODE) as well as byte input.
 
-RunCC serializes built parsers and lexers to speed up the building process next time they are needed, so
+RunCC features simplicity and the absence of any cryptography except an EBNF
+dialect.
 
-RunCC provides source generation only as option. It can generate Java code for ParserTables, Syntax, and Semantic skeletons.
+RunCC serializes built parsers and lexers to speed up the building process
+next time they are needed, so
 
-RunCC defines a clear separation of responsibilities: Syntax/Rule, Lexer, Parser, ParserTables, Semantic. No source fragments are possible within the syntax notation. Responsibilities are:
-The Syntax holding the specified language rules for lexer and parser,
-the builders that serializes lexers and parsers after build to bridge the building process next time the parser is needed,
-source generation utilities,
-the universal bottom-up Parser algorithm, loaded with
-ParserTables that hold the syntax processing tables ("Goto", "Parse-Action"),
-the Lexer that scans tokens from input to feed the parser
-and (last but not least) the Semantic that processes the parsing results
-The syntax is written either embedded in Java as String arrays (representing rules), or within a separate file, using an EBNF dialect. No source fragments are possible within the syntax notation. This is done by Semantic implementations.
+RunCC provides source generation only as option. It can generate Java code for
+ParserTables, Syntax, and Semantic skeletons.
 
-To understand those principles look at the following (classical) Calculator example, showing the elegance of ReflectSemantic.
-Try it by typing
+RunCC defines a clear separation of responsibilities: Syntax/Rule, Lexer,
+Parser, ParserTables, Semantic. No source fragments are possible within the
+syntax notation. Responsibilities are:
+
+ - The Syntax holding the specified language rules for lexer and parser,
+ - The builders that serializes lexers and parsers after build to bridge the building process next time the parser is needed,
+ - Source generation utilities,
+ - The universal bottom-up Parser algorithm, loaded with
+ - ParserTables that hold the syntax processing tables ("Goto", "Parse-Action"),
+ - The Lexer that scans tokens from input to feed the parser and (last but not least) 
+ - The Semantic that processes the parsing results
+
+The syntax is written either embedded in Java as String arrays (representing
+rules), or within a separate file, using an EBNF dialect. No source fragments
+are possible within the syntax notation. This is done by Semantic
+implementations.
+
+To understand those principles look at the following (classical) Calculator
+example, showing the elegance of ReflectSemantic. Try it by typing
 
     java -jar runcc.jar '(4+2.3) *(2 - -6) + 3*2'
 
@@ -76,58 +93,57 @@ or
 
 I hope it will be 56.4 !
 
-<pre>public class Calculator extends ReflectSemantic
-{
-    private static String [][] rules = {
-        { "EXPRESSION",   "TERM" },
-        { "EXPRESSION",   "EXPRESSION", "'+'", "TERM" },
-        { "EXPRESSION",   "EXPRESSION", "'-'", "TERM" },
-        { "TERM",   "FACTOR", },
-        { "TERM",   "TERM", "'*'", "FACTOR" },
-        { "TERM",   "TERM", "'/'", "FACTOR" },
-        { "FACTOR",   "`number`", },
-        { "FACTOR",   "'-'", "FACTOR" },
-        { "FACTOR",   "'('", "EXPRESSION", "')'" },
-        { Token.IGNORED,   "`whitespaces`" },
-    };
+	public class Calculator extends ReflectSemantic
+	{
+	    private static String [][] rules = {
+	        { "EXPRESSION",   "TERM" },
+	        { "EXPRESSION",   "EXPRESSION", "'+'", "TERM" },
+	        { "EXPRESSION",   "EXPRESSION", "'-'", "TERM" },
+	        { "TERM",   "FACTOR", },
+	        { "TERM",   "TERM", "'*'", "FACTOR" },
+	        { "TERM",   "TERM", "'/'", "FACTOR" },
+	        { "FACTOR",   "`number`", },
+	        { "FACTOR",   "'-'", "FACTOR" },
+	        { "FACTOR",   "'('", "EXPRESSION", "')'" },
+	        { Token.IGNORED,   "`whitespaces`" },
+	    };
     
-    public Object EXPRESSION(Object TERM)    {
-        return TERM;
-    }
-    public Object EXPRESSION(Object EXPRESSION, Object operator, Object TERM)    {
-        if (operator.equals("+"))
-            return new Double(((Double) EXPRESSION).doubleValue() + ((Double) TERM).doubleValue());
-        return new Double(((Double) EXPRESSION).doubleValue() - ((Double) TERM).doubleValue());
-    }
-    public Object TERM(Object FACTOR)    {
-        return FACTOR;
-    }
-    public Object TERM(Object TERM, Object operator, Object FACTOR)    {
-        if (operator.equals("*"))
-            return new Double(((Double) TERM).doubleValue() * ((Double) FACTOR).doubleValue());
-        return new Double(((Double) TERM).doubleValue() / ((Double) FACTOR).doubleValue());
-    }
-    public Object FACTOR(Object number)    {
-        return Double.valueOf((String) number);
-    }
-    public Object FACTOR(Object minus, Object FACTOR)    {
-        return new Double( - ((Double) FACTOR).doubleValue() );
-    }
-    public Object FACTOR(Object leftParenthesis, Object EXPRESSION, Object rightParenthesis)    {
-        return EXPRESSION;
-    }
+	    public Object EXPRESSION(Object TERM)    {
+	        return TERM;
+	    }
+	    public Object EXPRESSION(Object EXPRESSION, Object operator, Object TERM)    {
+	        if (operator.equals("+"))
+	            return new Double(((Double) EXPRESSION).doubleValue() + ((Double) TERM).doubleValue());
+	        return new Double(((Double) EXPRESSION).doubleValue() - ((Double) TERM).doubleValue());
+	    }
+	    public Object TERM(Object FACTOR)    {
+	        return FACTOR;
+	    }
+	    public Object TERM(Object TERM, Object operator, Object FACTOR)    {
+	        if (operator.equals("*"))
+	            return new Double(((Double) TERM).doubleValue() * ((Double) FACTOR).doubleValue());
+	        return new Double(((Double) TERM).doubleValue() / ((Double) FACTOR).doubleValue());
+	    }
+	    public Object FACTOR(Object number)    {
+	        return Double.valueOf((String) number);
+	    }
+	    public Object FACTOR(Object minus, Object FACTOR)    {
+	        return new Double( - ((Double) FACTOR).doubleValue() );
+	    }
+	    public Object FACTOR(Object leftParenthesis, Object EXPRESSION, Object rightParenthesis)    {
+	        return EXPRESSION;
+	    }
 
+	    public static void main(String [] args) throws Exception   {
+	        String input = args[0];   // define some arithmetic expressions on commandline
+	        Parser parser = new SerializedParser().get(rules, "Calculator");    // allocates a default lexer
+	        boolean ok = parser.parse(input, new Calculator());
+	        System.err.println("Parse return "+ok+", result: "+parser.getResult());
+	    }
+	}
 
-    public static void main(String [] args) throws Exception   {
-        String input = args[0];   // define some arithmetic expressions on commandline
-        Parser parser = new SerializedParser().get(rules, "Calculator");    // allocates a default lexer
-        boolean ok = parser.parse(input, new Calculator());
-        System.err.println("Parse return "+ok+", result: "+parser.getResult());
-    }
-}
-</pre>
-
-You can find this sample in package fri/patterns/interpreter/parsergenerator/examples/Calculator.java.
+You can find this sample in package
+`fri/patterns/interpreter/parsergenerator/examples/Calculator.java.`
 
 Implementation Steps
 --------------------
@@ -838,46 +854,46 @@ and PARSE/ACTION-tables:
 GOTO TABLE 
 ----------
 
-      |  <START>    EXPR    TERM    FAKT     '+'     '-'     '*'     '/' `NUMBER     '('     ')' 
-      +------------------------------------------------------------------------------------------
-    0 |        -       2       1       4       -       -       -       -       5       3       - 
-    1 |        -       -       -       -       -       -       7       6       -       -       - 
-    2 |        -       -       -       -       9       8       -       -       -       -       - 
-    3 |        -      10       1       4       -       -       -       -       5       3       - 
-    4 |        -       -       -       -       -       -       -       -       -       -       - 
-    5 |        -       -       -       -       -       -       -       -       -       -       - 
-    6 |        -       -       -      11       -       -       -       -       5       3       - 
-    7 |        -       -       -      12       -       -       -       -       5       3       - 
-    8 |        -       -      13       4       -       -       -       -       5       3       - 
-    9 |        -       -      14       4       -       -       -       -       5       3       - 
-   10 |        -       -       -       -       9       8       -       -       -       -      15 
-   11 |        -       -       -       -       -       -       -       -       -       -       - 
-   12 |        -       -       -       -       -       -       -       -       -       -       - 
-   13 |        -       -       -       -       -       -       7       6       -       -       - 
-   14 |        -       -       -       -       -       -       7       6       -       -       - 
-   15 |        -       -       -       -       -       -       -       -       -       -       -
+       |  <START>    EXPR    TERM    FAKT     '+'     '-'     '*'     '/' `NUMBER     '('     ')' 
+       +------------------------------------------------------------------------------------------
+     0 |        -       2       1       4       -       -       -       -       5       3       - 
+     1 |        -       -       -       -       -       -       7       6       -       -       - 
+     2 |        -       -       -       -       9       8       -       -       -       -       - 
+     3 |        -      10       1       4       -       -       -       -       5       3       - 
+     4 |        -       -       -       -       -       -       -       -       -       -       - 
+     5 |        -       -       -       -       -       -       -       -       -       -       - 
+     6 |        -       -       -      11       -       -       -       -       5       3       - 
+     7 |        -       -       -      12       -       -       -       -       5       3       - 
+     8 |        -       -      13       4       -       -       -       -       5       3       - 
+     9 |        -       -      14       4       -       -       -       -       5       3       - 
+    10 |        -       -       -       -       9       8       -       -       -       -      15 
+    11 |        -       -       -       -       -       -       -       -       -       -       - 
+    12 |        -       -       -       -       -       -       -       -       -       -       - 
+    13 |        -       -       -       -       -       -       7       6       -       -       - 
+    14 |        -       -       -       -       -       -       7       6       -       -       - 
+    15 |        -       -       -       -       -       -       -       -       -       -       -
 
 PARSE-ACTION TABLE 
 ------------------
 
-      |      '+'     '-'     '*'     '/' `NUMBER     '('     ')'   <EOF> 
-      +------------------------------------------------------------------
-    0 |        -       -       -       -      SH      SH       -       - 
-    1 |        1       1      SH      SH       -       -       1       1 
-    2 |       SH      SH       -       -       -       -       -      AC 
-    3 |        -       -       -       -      SH      SH       -       - 
-    4 |        4       4       4       4       -       -       4       4 
-    5 |        7       7       7       7       -       -       7       7 
-    6 |        -       -       -       -      SH      SH       -       - 
-    7 |        -       -       -       -      SH      SH       -       - 
-    8 |        -       -       -       -      SH      SH       -       - 
-    9 |        -       -       -       -      SH      SH       -       - 
-   10 |       SH      SH       -       -       -       -      SH       - 
-   11 |        6       6       6       6       -       -       6       6 
-   12 |        5       5       5       5       -       -       5       5 
-   13 |        3       3      SH      SH       -       -       3       3 
-   14 |        2       2      SH      SH       -       -       2       2 
-   15 |        8       8       8       8       -       -       8       8 
+       |      '+'     '-'     '*'     '/' `NUMBER     '('     ')'   <EOF> 
+       +------------------------------------------------------------------
+     0 |        -       -       -       -      SH      SH       -       - 
+     1 |        1       1      SH      SH       -       -       1       1 
+     2 |       SH      SH       -       -       -       -       -      AC 
+     3 |        -       -       -       -      SH      SH       -       - 
+     4 |        4       4       4       4       -       -       4       4 
+     5 |        7       7       7       7       -       -       7       7 
+     6 |        -       -       -       -      SH      SH       -       - 
+     7 |        -       -       -       -      SH      SH       -       - 
+     8 |        -       -       -       -      SH      SH       -       - 
+     9 |        -       -       -       -      SH      SH       -       - 
+    10 |       SH      SH       -       -       -       -      SH       - 
+    11 |        6       6       6       6       -       -       6       6 
+    12 |        5       5       5       5       -       -       5       5 
+    13 |        3       3      SH      SH       -       -       3       3 
+    14 |        2       2      SH      SH       -       -       2       2 
+    15 |        8       8       8       8       -       -       8       8 
   
 
 
@@ -907,10 +923,8 @@ Reorganize StandardLexerRules.java, divide the monolithic arrays into smaller
 units.
 
 JUnit test cases
-----------------
 
 Writing XML instead of the EBNF dialect to define a syntax
-----------------------------------------------------------
 
 Other parser generators
 -----------------------
