@@ -83,8 +83,8 @@ public class XmlLexer {
 		 * imported from generated source to be consistent.
 		 */
 		@Override
-		public Set getWantedNonterminals() {
-			Set considered = new HashSet();
+		public Set<String> getWantedNonterminals() {
+			Set<String> considered = new HashSet<String>();
 			considered.add("Name");
 			considered.add("Nmtoken");
 			considered.add("EntityValue");

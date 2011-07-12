@@ -17,20 +17,23 @@ import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.semantics.
 
 public class Calculator extends ReflectSemantic {
 	private static String[][] rules = { // arithmetic sample
-	{ "EXPRESSION", "TERM" }, { "EXPRESSION", "EXPRESSION", "'+'", "TERM" },
-			{ "EXPRESSION", "EXPRESSION", "'-'", "TERM" },
-			{ "TERM", "FACTOR", }, { "TERM", "TERM", "'*'", "FACTOR" },
-			{ "TERM", "TERM", "'/'", "FACTOR" },
-			{ "FACTOR", "`number`", },
-			{ "FACTOR", "'-'", "FACTOR" }, // need LALRParserTables instead of
-											// SLRParserTables because of this
-											// rule
-			{ "FACTOR", "'('", "EXPRESSION", "')'" },
+	{ "EXPRESSION", "TERM" }, //
+			{ "EXPRESSION", "EXPRESSION", "'+'", "TERM" }, //
+			{ "EXPRESSION", "EXPRESSION", "'-'", "TERM" }, //
+			{ "TERM", "FACTOR", }, //
+			{ "TERM", "TERM", "'*'", "FACTOR" }, //
+			{ "TERM", "TERM", "'/'", "FACTOR" }, //
+			{ "FACTOR", "`number`", }, //
+			// need LALRParserTables instead of SLRParserTables because of this
+			// rule
+			{ "FACTOR", "'-'", "FACTOR" }, //
+			{ "FACTOR", "'('", "EXPRESSION", "')'" }, //
 			{ Token.IGNORED, "`whitespaces`" }, };
 
 	public Object EXPRESSION(Object TERM) {
-		return TERM; // do not really need this method as
-						// ReflectSemantic.fallback() does this
+		// do not really need this method as ReflectSemantic.fallback() does
+		// this
+		return TERM;
 	}
 
 	public Object EXPRESSION(Object EXPRESSION, Object operator, Object TERM) {
@@ -42,8 +45,9 @@ public class Calculator extends ReflectSemantic {
 	}
 
 	public Object TERM(Object FACTOR) {
-		return FACTOR; // do not really need this method as
-						// ReflectSemantic.fallback() does this
+		// do not really need this method as ReflectSemantic.fallback() does
+		// this
+		return FACTOR;
 	}
 
 	public Object TERM(Object TERM, Object operator, Object FACTOR) {
@@ -102,5 +106,4 @@ public class Calculator extends ReflectSemantic {
 		 * .getResult());
 		 */
 	}
-
 }
