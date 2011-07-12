@@ -46,7 +46,7 @@ public interface Lexer {
 	 * @param terminals
 	 *            List of String containing all terminals of the parser syntax.
 	 */
-	public void setTerminals(List terminals);
+	public void setTerminals(List<String> terminals);
 
 	/**
 	 * Returns the next token from input. This is done trying to satisy the

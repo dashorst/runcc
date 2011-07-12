@@ -25,11 +25,12 @@ import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.Token;
  */
 
 public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
+	private static final long serialVersionUID = 1L;
 	protected Strategy strategy;
-	private List ignoredSymbols;
-	private Map charConsumers;
+	private List<String> ignoredSymbols;
+	private Map<String, Consumer> charConsumers;
 	private transient InputText input;
-	private List listeners;
+	private List<Lexer.TokenListener> listeners;
 	private transient boolean debug;
 
 	/**
@@ -42,7 +43,8 @@ public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
 	 * @param charConsumers
 	 *            map with key = nonterminal and value = Consumer.
 	 */
-	public LexerImpl(List ignoredSymbols, Map charConsumers) {
+	public LexerImpl(List<String> ignoredSymbols,
+			Map<String, Consumer> charConsumers) {
 		setConsumers(ignoredSymbols, charConsumers);
 	}
 
@@ -54,7 +56,7 @@ public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
 	@Override
 	public void addTokenListener(Lexer.TokenListener tokenListener) {
 		if (listeners == null)
-			listeners = new ArrayList(1);
+			listeners = new ArrayList<Lexer.TokenListener>(1);
 		listeners.add(tokenListener);
 	}
 
@@ -65,22 +67,15 @@ public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
 			listeners.remove(tokenListener);
 	}
 
-	private void setConsumers(List ignoredSymbols, Map charConsumers) {
+	private void setConsumers(List<String> ignoredSymbols,
+			Map<String, Consumer> charConsumers) {
 		this.charConsumers = charConsumers; // store for check at setTerminals()
 		this.ignoredSymbols = ignoredSymbols; // need to know which token should
 												// be ignored
 
-		for (int i = 0; ignoredSymbols != null && i < ignoredSymbols.size(); i++) { // ignored
-																					// symbols
-																					// will
-																					// not
-																					// be
-																					// passed
-																					// by
-																					// the
-																					// parser
-			String sym = (String) ignoredSymbols.get(i);
-			Consumer cc = (Consumer) charConsumers.get(sym);
+		// ignored symbols will not be passed by the parser
+		for (String sym : ignoredSymbols) {
+			Consumer cc = charConsumers.get(sym);
 			ensureStrategy().addIgnoringConsumer(sym, cc);
 		}
 
@@ -141,7 +136,7 @@ public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
 	 *            List of String containing "literals" and `lexertokens`.
 	 */
 	@Override
-	public void setTerminals(List terminals) {
+	public void setTerminals(List<String> terminals) {
 		for (int i = 0; i < terminals.size(); i++) {
 			String symbol = (String) terminals.get(i);
 
@@ -286,9 +281,9 @@ public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
 
 	// calls the token listeners with scanned token
 	private void fireTokenReceived(Token token, boolean ignored) {
-		for (int i = 0; listeners != null && i < listeners.size(); i++)
-			((Lexer.TokenListener) listeners.get(i)).tokenReceived(token,
-					ignored);
+		if (listeners != null)
+			for (Lexer.TokenListener listener : listeners)
+				listener.tokenReceived(token, ignored);
 	}
 
 	/**
@@ -343,7 +338,6 @@ public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
 		int c = input.peek();
 		boolean eof = (c == Input.EOF);
 		boolean error = eof;
-		Object ret = null;
 
 		if (error == false) {
 			Strategy.Item item = getNextLexerItem(null, c);
@@ -358,7 +352,6 @@ public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
 		}
 
 		if (error) {
-			ret = null;
 			dump(System.err);
 			System.err.println("Could not process character '" + (char) c
 					+ "' (int " + c + "), at line/column "
@@ -383,8 +376,9 @@ public class LexerImpl implements Lexer, StrategyFactoryMethod, Serializable {
 	 *         Rule/ResultTree.
 	 */
 	protected void loopResultTree(ResultTree result, LexerSemantic lexerSemantic) {
-		Set wantedNonterminals = lexerSemantic.getWantedNonterminals();
-		Set ignoredNonterminals = lexerSemantic.getIgnoredNonterminals();
+		Set<String> wantedNonterminals = lexerSemantic.getWantedNonterminals();
+		Set<String> ignoredNonterminals = lexerSemantic
+				.getIgnoredNonterminals();
 		String nonterminal = result.getRule().getNonterminal();
 
 		if (nonterminal

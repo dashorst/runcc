@@ -2,7 +2,6 @@ package com.martijndashorst.runcc.patterns.interpreter.parsergenerator.lexer;
 
 import java.io.IOException;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -89,8 +88,8 @@ import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.bui
  */
 
 public class LexerBuilder {
-	protected Map charConsumers;
-	protected List ignoredSymbols;
+	protected Map<String, Consumer> charConsumers;
+	protected List<String> ignoredSymbols;
 	public static boolean DEBUG; // defaults to false
 
 	/**
@@ -102,7 +101,7 @@ public class LexerBuilder {
 	 * @param ignoredSymbols
 	 *            list of ignored symbols, NOT enclosed in backquotes!
 	 */
-	public LexerBuilder(Syntax lexerSyntax, List ignoredSymbols)
+	public LexerBuilder(Syntax lexerSyntax, List<String> ignoredSymbols)
 			throws LexerException, SyntaxException {
 		this.ignoredSymbols = ignoredSymbols;
 		build(lexerSyntax);
@@ -131,7 +130,7 @@ public class LexerBuilder {
 			System.err.println("Processing lexer rules: \n" + lexerSyntax);
 
 		// resolve scanner rules to Consumers and put it into a hashtable
-		this.charConsumers = new Hashtable(lexerSyntax.size());
+		this.charConsumers = new Hashtable<String, Consumer>(lexerSyntax.size());
 		for (int i = 0; i < lexerSyntax.size(); i++)
 			translateLexerRule(lexerSyntax.getRule(i), i, deleteIndexes);
 		deleteIndexes.removeIndexesFrom(lexerSyntax);
@@ -157,9 +156,10 @@ public class LexerBuilder {
 
 		// resolve all symbolic consumer references after all consumers have
 		// been created
-		Map done = new Hashtable(); // beware of recursion
-		for (Iterator it = charConsumers.entrySet().iterator(); it.hasNext();) {
-			Consumer cc = (Consumer) ((Map.Entry) it.next()).getValue();
+
+		// beware of recursion
+		Map<Consumer, Consumer> done = new Hashtable<Consumer, Consumer>();
+		for (Consumer cc : charConsumers.values()) {
 			cc.resolveConsumerReferences(charConsumers, done);
 		}
 	}
@@ -167,19 +167,10 @@ public class LexerBuilder {
 	private void translateLexerRule(Rule rule, int index,
 			SyntaxSeparation.IntArray deleteIndexes) throws LexerException {
 		String nonterm = rule.getNonterminal();
-		if (rule.rightSize() <= 0 || rule.getRightSymbol(0).equals(nonterm)) // nullable
-																				// rules
-																				// and
-																				// left
-																				// recursive
-																				// rules
-																				// will
-																				// be
-																				// resolved
-																				// later
-			return;
 
-		// System.err.println("translating lexer rule: "+rule);
+		// nullable rules and left recursive rules will be resolved later
+		if (rule.rightSize() <= 0 || rule.getRightSymbol(0).equals(nonterm))
+			return;
 
 		// ExtendedGrammar should have resolved all parenthesis expressions and
 		// wildcards.
@@ -206,8 +197,8 @@ public class LexerBuilder {
 		Consumer setConsumer = currentConsumer; // will host set definitions
 		consumer.append(currentConsumer); // will be resolved when trivial
 
-		for (int i = 0; i < rule.rightSize(); i++) { // loop all symbols on
-														// right side
+		// loop all symbols on right side
+		for (int i = 0; i < rule.rightSize(); i++) {
 			String sym = rule.getRightSymbol(i);
 
 			if (sym.equals(Token.BUTNOT)) {
@@ -330,7 +321,7 @@ public class LexerBuilder {
 		// check for nonterm in hashtable, set it repeatable if found
 		if (rule.rightSize() >= 2 && rule.getRightSymbol(0).equals(nonterm)) { // left
 																				// recursive
-			Consumer cc = (Consumer) charConsumers.get(nonterm);
+			Consumer cc = charConsumers.get(nonterm);
 			if (cc.matchesRepeatableRule(rule)) { // check if rest on the right
 													// is same
 				cc.setRepeatable();

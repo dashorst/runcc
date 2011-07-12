@@ -31,7 +31,7 @@ public interface LexerSemantic {
 	 * side) this LexerSemantic wants to dispatch. Returning null will enable
 	 * all nonterminals or rules.
 	 */
-	public Set getWantedNonterminals();
+	public Set<String> getWantedNonterminals();
 
 	/**
 	 * Can return the String Set of nonterminals (must occur in syntax on left
@@ -39,6 +39,6 @@ public interface LexerSemantic {
 	 * alternative to <i>getWantedNonterminals()</i>. Returning null will not
 	 * ignore any nonterminal or rule.
 	 */
-	public Set getIgnoredNonterminals();
+	public Set<String> getIgnoredNonterminals();
 
 }

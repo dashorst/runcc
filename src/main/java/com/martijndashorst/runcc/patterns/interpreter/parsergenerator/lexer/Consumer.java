@@ -3,6 +3,7 @@ package com.martijndashorst.runcc.patterns.interpreter.parsergenerator.lexer;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -22,9 +23,10 @@ import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.syntax.Rul
  * @author (c) 2002, Fritz Ritzberger
  */
 
-class Consumer implements Comparable, Serializable {
-	private List sequence = new ArrayList();
-	private List constraints;
+class Consumer implements Comparable<Consumer>, Serializable {
+	private static final long serialVersionUID = 1L;
+	private List<Object> sequence = new ArrayList<Object>();
+	private List<Object> constraints;
 	private boolean nullable = false;
 	private boolean repeatable = false;
 	protected Rule rule;
@@ -93,34 +95,33 @@ class Consumer implements Comparable, Serializable {
 	/** Passed Consumer will constrain every character of this consumer. */
 	public void subtract(Consumer constraint) {
 		if (constraints == null)
-			constraints = new ArrayList();
+			constraints = new ArrayList<Object>();
 		constraints.add(constraint);
 	}
 
 	/** Passed reference will constrain every character of this consumer. */
 	public void subtract(Reference constraint) {
 		if (constraints == null)
-			constraints = new ArrayList();
+			constraints = new ArrayList<Object>();
 		constraints.add(constraint);
 	}
 
 	/** Resolve all references to real consumers after build. */
-	public void resolveConsumerReferences(Map charConsumers, Map doneList)
-			throws LexerException {
+	@SuppressWarnings("unchecked")
+	public void resolveConsumerReferences(Map<String, Consumer> charConsumers,
+			Map<Consumer, Consumer> doneList) throws LexerException {
 		if (doneList.get(this) != null)
 			return;
 		doneList.put(this, this);
 
-		List[] varr = new List[] { sequence, getAlternatives(), constraints };
-		for (int j = 0; j < varr.length; j++) {
-			List v = varr[j];
-
+		List<List<Object>> varr;
+		varr = Arrays.asList(sequence, getAlternatives(), constraints);
+		for (List<Object> v : varr) {
 			if (v != null) {
 				for (int i = 0; v != null && i < v.size(); i++) {
 					Object o = v.get(i);
 
 					if (o instanceof Reference) {
-						// System.err.println("Found consumer reference "+o+" within "+rule);
 						Reference cr = (Reference) o;
 						Object cc = charConsumers.get(cr.nonterminal);
 
@@ -156,7 +157,7 @@ class Consumer implements Comparable, Serializable {
 	}
 
 	/** Always returns null as this consumer holds no alternatives. */
-	public List getAlternatives() {
+	public List<Object> getAlternatives() {
 		return null;
 	}
 
@@ -165,18 +166,22 @@ class Consumer implements Comparable, Serializable {
 	 * getStartVariance(), + getStartLength(), + getFixedLength().
 	 */
 	@Override
-	public int compareTo(Object o) {
-		Consumer cc = (Consumer) o;
+	public int compareTo(Consumer o) {
+		Consumer cc = o;
 		int i;
-		i = getStartVariance() - cc.getStartVariance(); // be as exact as
-														// possible
+
+		// be as exact as possible
+		i = getStartVariance() - cc.getStartVariance();
 		if (i != 0)
 			return i;
-		i = cc.getStartLength() - getStartLength(); // be as significant as
-													// possible
+
+		// be as significant as possible
+		i = cc.getStartLength() - getStartLength();
 		if (i != 0)
 			return i;
-		i = cc.getFixedLength() - getFixedLength(); // be long as possible
+
+		// be long as possible
+		i = cc.getFixedLength() - getFixedLength();
 		if (i != 0)
 			return i;
 		return 0;
@@ -188,7 +193,7 @@ class Consumer implements Comparable, Serializable {
 	 */
 	public Character getStartCharacter() {
 		Object o = sequence.get(0);
-		// System.err.println("getStartCharacter from sequence "+o);
+
 		if (o instanceof Consumer)
 			return ((Consumer) o).getStartCharacter();
 		else if (o instanceof CharacterSet)
@@ -232,7 +237,7 @@ class Consumer implements Comparable, Serializable {
 		if (fixedLength >= 0) // never call toString() before all sequences have
 								// arrived
 			return fixedLength;
-		fixedLength = getSomeLength(false, new ArrayList());
+		fixedLength = getSomeLength(false, new ArrayList<String>());
 		return fixedLength;
 	}
 
@@ -244,13 +249,14 @@ class Consumer implements Comparable, Serializable {
 		if (startLength >= 0) // never call toString() before all sequences have
 								// arrived
 			return startLength;
-		List reason = new ArrayList();
+		List<String> reason = new ArrayList<String>();
 		startLength = getSomeLength(true, reason);
 		// System.err.println("found start length "+startLength+" for rule "+rule+", sequence "+sequence+", reason "+reason);
 		return startLength;
 	}
 
-	protected int getSomeLength(boolean exploreStartLength, List breakIndicator) {
+	protected int getSomeLength(boolean exploreStartLength,
+			List<String> breakIndicator) {
 		int len = 0;
 
 		for (int i = 0; breakIndicator.size() <= 0 && i < sequence.size(); i++) {
@@ -484,8 +490,8 @@ class Consumer implements Comparable, Serializable {
 	}
 
 	/** Converts a list into String, for toString() method. */
-	protected void listToString(List list, StringBuffer sb, String separator,
-			boolean separatorAtFirst) {
+	protected void listToString(List<Object> list, StringBuffer sb,
+			String separator, boolean separatorAtFirst) {
 		for (int i = 0; list != null && i < list.size(); i++) {
 			Object o = list.get(i);
 
@@ -555,6 +561,7 @@ class Consumer implements Comparable, Serializable {
 	}
 
 	private static class CharacterSet implements Serializable {
+		private static final long serialVersionUID = 1L;
 		private String stringRepres;
 		private char firstChar, lastChar;
 
@@ -577,7 +584,7 @@ class Consumer implements Comparable, Serializable {
 
 		/** Returns the number of contained characters. */
 		public int getVariance() {
-			return lastChar - firstChar;
+			return getLastChar() - getFirstChar();
 		}
 
 		/** Returns true if passed character is contained in this set. */
@@ -607,5 +614,4 @@ class Consumer implements Comparable, Serializable {
 			return stringRepres;
 		}
 	}
-
 }

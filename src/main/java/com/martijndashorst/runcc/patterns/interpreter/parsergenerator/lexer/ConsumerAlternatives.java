@@ -15,7 +15,8 @@ import com.martijndashorst.runcc.util.Equals;
  */
 
 class ConsumerAlternatives extends Consumer {
-	private List alternates = new ArrayList(3);
+	private static final long serialVersionUID = 1L;
+	private List<Object> alternates = new ArrayList<Object>(3);
 	private StrategyFactoryMethod strategyFactoryMethod;
 	private Strategy strategy;
 
@@ -35,7 +36,7 @@ class ConsumerAlternatives extends Consumer {
 	 * explicitely to read input. This must be done to match the longest input.
 	 */
 	@Override
-	public List getAlternatives() {
+	public List<Object> getAlternatives() {
 		return alternates;
 	}
 
@@ -100,7 +101,8 @@ class ConsumerAlternatives extends Consumer {
 	 * (like "chars*").
 	 */
 	@Override
-	protected int getSomeLength(boolean exploreStartLength, List breakIndicator) {
+	protected int getSomeLength(boolean exploreStartLength,
+			List<String> breakIndicator) {
 		int max = 0;
 		for (int i = 0; i < alternates.size(); i++) {
 			Consumer cc = (Consumer) alternates.get(i);
