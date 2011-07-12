@@ -14,7 +14,6 @@ import com.martijndashorst.runcc.patterns.interpreter.parsergenerator.semantics.
  * 
  * @author Fritz Ritzberger
  */
-
 public class Calculator extends ReflectSemantic {
 	private static String[][] rules = { // arithmetic sample
 	{ "EXPRESSION", "TERM" }, //
